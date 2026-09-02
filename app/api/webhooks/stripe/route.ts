@@ -7,10 +7,14 @@ import { ConvexHttpClient } from 'convex/browser';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 
+import resend from '@/lib/resend';
+import PurchaseConfirmationEmail from '@/emails/PurchaseConfirmationEmail';
+import ProPlanActivatedEmail from '@/emails/ProPlanActivatedEmail';
+
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export async function POST(req: NextRequest) {
-  console.log('🔔 Webhook received!');
+  console.log('🔔 Stripe Webhook received!');
 
   const body = await req.text();
   const signature = req.headers.get('stripe-signature')!;
@@ -67,8 +71,10 @@ const handleCheckoutSessionCompleted = async (
 
   const stripeCustomerId = session.customer as string;
   const courseId = session.metadata?.courseId;
+  const courseTitle = session.metadata?.courseTitle;
+  const courseImage = session.metadata?.courseImage;
 
-  if (!courseId || !stripeCustomerId) {
+  if (!courseId || !stripeCustomerId || !courseImage || !courseTitle) {
     throw new Error('Missing metadata in checkout session');
   }
 
@@ -88,6 +94,20 @@ const handleCheckoutSessionCompleted = async (
     });
 
     console.log('Purchase created successfully');
+
+    await resend.emails.send({
+      from: 'ProLearner <onboarding@resend.dev>',
+      to: user.email,
+      subject: 'Purchase Confirmed',
+      react: PurchaseConfirmationEmail({
+        customerName: user.name!,
+        courseTitle,
+        courseImage,
+        courseUrl: `${process.env.NEXT_PUBLIC_APP_URL}/courses${courseId}`,
+        purchaseAmount: session.amount_total! / 100,
+      }),
+    });
+    console.log('Purchase confirmation email sent successfully');
   } catch (error) {
     console.error('Error creating purchase:', error);
     throw error;
@@ -139,6 +159,22 @@ const handleSubscriptionUpsert = async (
     console.log(
       `Successfully processed ${eventType} for subscription ${subscription.id}`,
     );
+
+    const isCreationEvent = eventType === 'customer.subscription.created';
+    if (isCreationEvent) {
+      await resend.emails.send({
+        from: 'ProLearner <onboarding@resend.dev>',
+        to: user.email,
+        subject: 'Purchase Confirmed',
+        react: ProPlanActivatedEmail({
+          name: user.name!,
+          planType: subscriptionItem.plan.interval,
+          currentPeriodStart: subscriptionItem.current_period_start,
+          currentPeriodEnd: subscriptionItem.current_period_end,
+          url: process.env.NEXT_PUBLIC_APP_URL!,
+        }),
+      });
+    }
   } catch (error) {
     console.error(
       `Error processed ${eventType} for subscription ${subscription.id}: `,

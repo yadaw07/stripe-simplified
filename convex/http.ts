@@ -5,6 +5,9 @@ import type { WebhookEvent } from '@clerk/backend';
 
 import stripe from '../lib/stripe';
 
+import resend from '@/lib/resend';
+import WelcomeEmail from '@/emails/WelcomeEmail';
+
 import { Webhook } from 'svix';
 import { api } from './_generated/api';
 
@@ -40,6 +43,13 @@ const clerkWebhook = httpAction(async (ctx, request) => {
         email,
         name,
         stripeCustomerId: customer.id,
+      });
+
+      await resend.emails.send({
+        from: 'ProLearner <onboarding@resend.dev>',
+        to: email,
+        subject: 'Welcome to MasterClass!',
+        react: WelcomeEmail({ name, url: process.env.NEXT_PUBLIC_APP_URL! }),
       });
     } catch (err: any) {
       console.error(err.message || 'Users creation failed in convex');

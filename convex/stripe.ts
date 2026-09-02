@@ -69,6 +69,8 @@ export const createCheckoutSession = action({
       metadata: {
         courseId: args.courseId,
         userId: user._id,
+        courseTitle: course.title,
+        courseImage: course.imageUrl,
       },
     });
 
