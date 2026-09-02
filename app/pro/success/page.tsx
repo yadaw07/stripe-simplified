@@ -1,92 +1,52 @@
-'use client';
+import { Suspense } from 'react';
+import { Check, Sparkles } from 'lucide-react';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import SuccessPageContent from './SuccessPageContent';
 
-import { MONTHLY_BENEFITS, YEARLY_BENEFITS } from '@/constants';
+const LoadingFallback = () => {
+  return (
+    <div className='min-h-screen flex items-center justify-center px-4'>
+      <div className='w-full max-w-md text-center'>
+        {/* Animated icon */}
+        <div className='relative mx-auto mb-8 h-20 w-20'>
+          <div className='absolute inset-0 rounded-full bg-purple-500/20 animate-ping' />
 
-import { Check, Clock, Rocket, Star } from 'lucide-react';
+          <div className='relative flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-purple-500 to-pink-500 shadow-lg shadow-purple-500/25'>
+            <Sparkles className='h-9 w-9 text-white animate-pulse' />
+          </div>
+        </div>
 
-import {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+        {/* Text */}
+        <h2 className='text-2xl font-bold tracking-tight'>
+          Activating your Pro experience
+        </h2>
+
+        <p className='mt-3 text-muted-foreground'>
+          We&apos;re getting everything ready for you...
+        </p>
+
+        {/* Progress indicator */}
+        <div className='mt-8 h-1.5 w-full overflow-hidden rounded-full bg-muted'>
+          <div className='h-full w-1/2 rounded-full bg-linear-to-r from-purple-500 to-pink-500 animate-[loading_1.5s_ease-in-out_infinite]' />
+        </div>
+
+        {/* Status */}
+        <div className='mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground'>
+          <span className='flex h-5 w-5 items-center justify-center rounded-full bg-green-500/10'>
+            <Check className='h-3 w-3 text-green-500' />
+          </span>
+          Verifying your subscription
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SuccessPage = () => {
-  const router = useRouter();
-
-  const searchParams = useSearchParams();
-  const isYearly = searchParams.get('yearly') === 'true';
-
-  const benefits = isYearly ? YEARLY_BENEFITS : MONTHLY_BENEFITS;
-
   return (
-    <div className='container mx-auto px-4 py-8 md:py-16 max-w-4xl h-screen'>
-      <Card className='w-full overflow-hidden'>
-        <div
-          className={`w-full h-2 ${isYearly ? 'bg-linear-to-r from-purple-500 to-pink-500' : 'bg-blue-500'}`}
-        />
-        <CardHeader className='text-center'>
-          <div className='flex justify-center mb-4'>
-            {isYearly ? (
-              <Badge variant='secondary' className='text-lg px-3 py-1'>
-                <Star className='mr-1 h-5 w-5 text-yellow-500' />
-                Yearly Pro
-              </Badge>
-            ) : (
-              <Badge variant='secondary' className='text-lg px-3 py-1'>
-                <Clock className='mr-1 h-5 w-5 text-blue-500' />
-                Monthly Pro
-              </Badge>
-            )}
-          </div>
-          <CardTitle className='text-3xl md:text-4xl font-bold mb-2 text-primary'>
-            Welcome to Pro!
-          </CardTitle>
-          <CardDescription className='text-lg md:text-xl'>
-            You&apos;ve successfully subscribed to our{' '}
-            {isYearly ? 'Yearly' : 'Monthly'} Pro plan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className='space-y-6'>
-            <h3 className='text-xl md:text-2xl font-semibold'>
-              Your Pro Benefits:
-            </h3>
-            <ul className='space-y-3'>
-              {benefits.map((benefit, index) => (
-                <li
-                  key={index}
-                  className='flex items-center space-x-3 text-sm md:text-base'
-                >
-                  <Check
-                    className={`shrink-0 h-6 w-6 ${isYearly ? 'text-purple-500' : 'text-green-500'}`}
-                  />
-                  <span>{benefit}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </CardContent>
-        <CardFooter className='flex flex-col space-y-4'>
-          <Button
-            className='w-full text-lg'
-            size='lg'
-            onClick={() => router.push('/courses')}
-          >
-            <Rocket className='mr-2 h-5 w-5' /> Start Your Pro Journey
-          </Button>
-          <p className='text-sm text-muted-foreground text-center'>
-            Excited to get started? Explore your new Pro features now!
-          </p>
-        </CardFooter>
-      </Card>
-    </div>
+    <Suspense fallback={<LoadingFallback />}>
+      <SuccessPageContent />
+    </Suspense>
   );
 };
 
